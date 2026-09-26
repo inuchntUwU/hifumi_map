@@ -1,0 +1,38 @@
+name: Build firmware
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: qmkfm/qmk_cli
+
+    steps:
+      - name: Checkout keymap
+        uses: actions/checkout@v4
+
+      - name: Checkout qmk_firmware
+        uses: actions/checkout@v4
+        with:
+          repository: qmk/qmk_firmware
+          path: qmk_firmware
+          submodules: recursive
+
+      - name: Copy keymap
+        run: |
+          git config --global --add safe.directory '*'
+          mkdir -p qmk_firmware/keyboards/hifumi/keymaps/agent
+          cp keymaps/agent/* qmk_firmware/keyboards/hifumi/keymaps/agent/
+
+      - name: Compile
+        working-directory: qmk_firmware
+        run: qmk compile -kb hifumi -km agent
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: hifumi_agent
+          path: qmk_firmware/hifumi_agent.hex
